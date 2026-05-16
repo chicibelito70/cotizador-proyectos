@@ -506,8 +506,20 @@ function App() {
         rel="noopener noreferrer"
         aria-label="Contactar por WhatsApp"
       >
+        <span className="wa-tooltip">¿Hablamos de tu proyecto? 🚀</span>
         <MessageCircle size={32} />
       </a>
+      <footer className="footer">
+        <p>Desarrollado con ❤️ por <strong>Carlos Villavizar</strong></p>
+        <a 
+          href="https://carlosvillavizar.netlify.app" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="footer-link"
+        >
+          Visitar mi Portafolio 🚀
+        </a>
+      </footer>
     </div>
   );
 }
