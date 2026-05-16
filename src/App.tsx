@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import emailjs from '@emailjs/browser';
+import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, Circle, CheckSquare, Square, 
@@ -399,21 +400,45 @@ function App() {
                       )
                       .then(() => {
                         console.log('Cliente notificado');
-                        alert('¡Cotización enviada exitosamente! Hemos enviado una copia a tu correo.');
-                        setShowModal(false);
+                        Swal.fire({
+                          title: '¡Cotización Enviada!',
+                          text: 'Hemos enviado una copia detallada a tu correo electrónico.',
+                          icon: 'success',
+                          background: '#1e293b',
+                          color: '#f8fafc',
+                          confirmButtonColor: '#3b82f6',
+                          confirmButtonText: 'Excelente'
+                        }).then(() => {
+                          // Refrescar la página después de que el usuario cierre el mensaje de éxito
+                          window.location.reload();
+                        });
                       })
                       .catch((err) => {
                         console.error('Error enviando al cliente:', err);
-                        // Aunque falle el del cliente, ya te llegó a ti, así que avisamos éxito parcial
-                        alert('Cotización recibida. Te contactaremos pronto.');
-                        setShowModal(false);
+                        Swal.fire({
+                          title: 'Recibido Parcialmente',
+                          text: `Tu cotización nos llegó, pero hubo un problema enviando tu copia: ${err.text || 'Error desconocido'}. No te preocupes, te contactaremos pronto.`,
+                          icon: 'warning',
+                          background: '#1e293b',
+                          color: '#f8fafc',
+                          confirmButtonColor: '#3b82f6'
+                        }).then(() => {
+                          window.location.reload();
+                        });
                       })
                       .finally(() => setIsSending(false));
                     }, 1500);
                   })
                   .catch((error) => {
                     console.log('FALLO...', error.text);
-                    alert('Hubo un error al enviar. Por favor intenta de nuevo.');
+                    Swal.fire({
+                      title: 'Error de Envío',
+                      text: `No pudimos procesar tu solicitud: ${error.text || 'Error de conexión'}. Por favor, verifica tu internet e intenta de nuevo.`,
+                      icon: 'error',
+                      background: '#1e293b',
+                      color: '#f8fafc',
+                      confirmButtonColor: '#ef4444'
+                    });
                     setIsSending(false);
                   });
                 }}
@@ -428,7 +453,24 @@ function App() {
                 </div>
                 <div className="input-group">
                   <label>Tu Teléfono / WhatsApp</label>
-                  <input type="tel" name="telefono" required placeholder="Ej. 8299381913" />
+                  <input 
+                    type="tel" 
+                    name="telefono" 
+                    required 
+                    onKeyPress={(e) => {
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      target.value = target.value.replace(/[^0-9]/g, '');
+                    }}
+                    pattern="[0-9]{7,15}" 
+                    title="Ingresa solo números (de 7 a 15 dígitos)"
+                    placeholder="Ej. 8299381913" 
+                  />
+                  <small style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px', display: 'block' }}> Solo números, sin espacios ni guiones </small>
                 </div>
 
                 <button 
