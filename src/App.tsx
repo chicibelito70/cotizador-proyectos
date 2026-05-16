@@ -359,29 +359,61 @@ function App() {
                   
                   setIsSending(true);
                   
-                  // Preparamos los parámetros de la plantilla para que coincidan con el HTML
-                  const templateParams = {
+                  // Preparamos los parámetros de la plantilla
+                  const adminParams = {
                     from_name: formRef.current?.nombre.value,
                     reply_to: formRef.current?.email.value,
+                    phone: formRef.current?.telefono.value,
                     total: `$${totals.total.toLocaleString('en-US')} USD`,
                     message: totals.allSelectedOptions.map(o => o.label).join("\n• ")
+                  };
+
+                  // 1. Enviar al Administrador (carlosvillavizar07@gmail.com)
+                  const adminSubmissionParams = {
+                    ...adminParams,
+                    to_email: 'carlosvillavizar07@gmail.com'
                   };
 
                   emailjs.send(
                     'service_ff1j4eb', 
                     'template_bfpqc24', 
-                    templateParams, 
+                    adminSubmissionParams, 
                     'ambIUButaUEFn0Cue'
                   )
-                  .then((result) => {
-                      console.log('EXITO!', result.text);
-                      alert('¡Cotización enviada exitosamente a tu correo!');
-                      setShowModal(false);
-                  }, (error) => {
-                      console.log('FALLO...', error.text);
-                      alert('Hubo un error al enviar. Por favor intenta de nuevo.');
+                  .then(() => {
+                    console.log('Admin notificado');
+                    
+                    // 2. Enviar al Cliente después de 1.5 segundos para evitar bloqueos
+                    setTimeout(() => {
+                      const clientParams = {
+                        ...adminParams,
+                        to_email: formRef.current?.email.value, // Parámetro específico para el cliente
+                        is_client_copy: "SÍ" // Marca para diferenciar el envío
+                      };
+
+                      emailjs.send(
+                        'service_ff1j4eb', 
+                        'template_tvv9c1c', 
+                        clientParams, 
+                        'ambIUButaUEFn0Cue'
+                      )
+                      .then(() => {
+                        console.log('Cliente notificado');
+                        alert('¡Cotización enviada exitosamente! Hemos enviado una copia a tu correo.');
+                        setShowModal(false);
+                      })
+                      .catch((err) => {
+                        console.error('Error enviando al cliente:', err);
+                        // Aunque falle el del cliente, ya te llegó a ti, así que avisamos éxito parcial
+                        alert('Cotización recibida. Te contactaremos pronto.');
+                        setShowModal(false);
+                      })
+                      .finally(() => setIsSending(false));
+                    }, 1500);
                   })
-                  .finally(() => {
+                  .catch((error) => {
+                    console.log('FALLO...', error.text);
+                    alert('Hubo un error al enviar. Por favor intenta de nuevo.');
                     setIsSending(false);
                   });
                 }}
@@ -393,6 +425,10 @@ function App() {
                 <div className="input-group">
                   <label>Tu Correo Electrónico</label>
                   <input type="email" name="email" required placeholder="juan@empresa.com" />
+                </div>
+                <div className="input-group">
+                  <label>Tu Teléfono / WhatsApp</label>
+                  <input type="tel" name="telefono" required placeholder="Ej. 8299381913" />
                 </div>
 
                 <button 
