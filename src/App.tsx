@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, Circle, CheckSquare, Square, 
-  Rocket, Mail, ChevronRight, ChevronLeft, Calculator, Send, MessageCircle
+  Rocket, ChevronRight, ChevronLeft, Calculator, Send, MessageCircle
 } from 'lucide-react';
 import { sections } from './data/options';
 import type { Option } from './data/options';
