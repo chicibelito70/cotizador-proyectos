@@ -400,14 +400,90 @@ p {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
   z-index: 1001;
   transition: all 0.3s ease;
   text-decoration: none;
+  animation: softJump 3s infinite ease-in-out;
 }
 
 .whatsapp-float:hover {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.1);
   background-color: #128c7e;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+  animation-play-state: paused;
+}
+
+.wa-tooltip {
+  position: absolute;
+  right: 80px;
+  background: white;
+  color: #1e293b;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  animation: fadeInOut 5s infinite ease-in-out;
+}
+
+.wa-tooltip::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 8px solid white;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+@keyframes softJump {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; transform: translateX(10px); }
+  10%, 90% { opacity: 1; transform: translateX(0); }
+}
+
+/* Footer Styles */
+.footer {
+  margin-top: 4rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.footer p {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.footer-link {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.footer-link:hover {
+  color: white;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+@media (max-width: 480px) {
+  .wa-tooltip {
+    display: none; /* Ocultar burbuja en móviles muy pequeños para no estorbar */
+  }
+  
+  .footer {
+    margin-top: 2rem;
+    padding: 2rem 1rem;
+  }
 }
