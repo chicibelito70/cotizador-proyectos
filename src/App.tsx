@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, Circle, CheckSquare, Square, 
-  Rocket, Mail, ChevronRight, ChevronLeft, Calculator, Send, MessageCircle
+  Rocket, ChevronRight, ChevronLeft, Calculator, Send, MessageCircle
 } from 'lucide-react';
 import { sections } from './data/options';
 import type { Option } from './data/options';
@@ -477,9 +477,20 @@ function App() {
                   type="submit"
                   className="btn" 
                   disabled={isSending}
-                  style={{ marginTop: '1.5rem', opacity: isSending ? 0.7 : 1 }}
+                  style={{ 
+                    marginTop: '2.5rem', 
+                    opacity: isSending ? 0.7 : 1,
+                    width: '100%',
+                    padding: '1.2rem',
+                    fontSize: '1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.3)'
+                  }}
                 >
-                  {isSending ? 'Enviando...' : 'Enviar Cotización'} <Mail size={18} />
+                  {isSending ? 'Procesando Envío...' : 'Enviar Cotización'} <Send size={20} />
                 </button>
               </form>
             </motion.div>
