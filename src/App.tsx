@@ -334,6 +334,7 @@ function App() {
                     message: totals.allSelectedOptions.map(o => o.label).join("\n• ")
                   };
 
+
                   const adminSubmissionParams = {
                     ...adminParams,
                     to_email: import.meta.env.VITE_ADMIN_EMAIL
@@ -383,6 +384,77 @@ function App() {
                       icon: 'error',
                       background: '#1e293b',
                       color: '#f8fafc'
+
+                  // 1. Enviar al Administrador (carlosvillavizar07@gmail.com)
+                  const adminSubmissionParams = {
+                    ...adminParams,
+                    to_email: 'carlosvillavizar07@gmail.com'
+                  };
+
+                  emailjs.send(
+                    'service_ff1j4eb', 
+                    'template_bfpqc24', 
+                    adminSubmissionParams, 
+                    'ambIUButaUEFn0Cue'
+                  )
+                  .then(() => {
+                    console.log('Admin notificado');
+                    
+                    // 2. Enviar al Cliente después de 1.5 segundos para evitar bloqueos
+                    setTimeout(() => {
+                      const clientParams = {
+                        ...adminParams,
+                        to_email: formRef.current?.email.value, // Parámetro específico para el cliente
+                        is_client_copy: "SÍ" // Marca para diferenciar el envío
+                      };
+
+                      emailjs.send(
+                        'service_ff1j4eb', 
+                        'template_tvv9c1c', 
+                        clientParams, 
+                        'ambIUButaUEFn0Cue'
+                      )
+                      .then(() => {
+                        console.log('Cliente notificado');
+                        Swal.fire({
+                          title: '¡Cotización Enviada!',
+                          text: 'Hemos enviado una copia detallada a tu correo electrónico.',
+                          icon: 'success',
+                          background: '#1e293b',
+                          color: '#f8fafc',
+                          confirmButtonColor: '#3b82f6',
+                          confirmButtonText: 'Excelente'
+                        }).then(() => {
+                          // Refrescar la página después de que el usuario cierre el mensaje de éxito
+                          window.location.reload();
+                        });
+                      })
+                      .catch((err) => {
+                        console.error('Error enviando al cliente:', err);
+                        Swal.fire({
+                          title: 'Recibido Parcialmente',
+                          text: `Tu cotización nos llegó, pero hubo un problema enviando tu copia: ${err.text || 'Error desconocido'}. No te preocupes, te contactaremos pronto.`,
+                          icon: 'warning',
+                          background: '#1e293b',
+                          color: '#f8fafc',
+                          confirmButtonColor: '#3b82f6'
+                        }).then(() => {
+                          window.location.reload();
+                        });
+                      })
+                      .finally(() => setIsSending(false));
+                    }, 1500);
+                  })
+                  .catch((error) => {
+                    console.log('FALLO...', error.text);
+                    Swal.fire({
+                      title: 'Error de Envío',
+                      text: `No pudimos procesar tu solicitud: ${error.text || 'Error de conexión'}. Por favor, verifica tu internet e intenta de nuevo.`,
+                      icon: 'error',
+                      background: '#1e293b',
+                      color: '#f8fafc',
+                      confirmButtonColor: '#ef4444'
+
                     });
                     setIsSending(false);
                   });
@@ -402,11 +474,28 @@ function App() {
                     type="tel" 
                     name="telefono" 
                     required 
+
                     onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }}
                     onInput={(e) => { (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.replace(/[^0-9]/g, ''); }}
                     pattern="[0-9]{7,15}" 
                     placeholder="Ej. 8299381913" 
                   />
+
+                    onKeyPress={(e) => {
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      target.value = target.value.replace(/[^0-9]/g, '');
+                    }}
+                    pattern="[0-9]{7,15}" 
+                    title="Ingresa solo números (de 7 a 15 dígitos)"
+                    placeholder="Ej. 8299381913" 
+                  />
+                  <small style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px', display: 'block' }}> Solo números, sin espacios ni guiones </small>
+
                 </div>
 
                 <button 
@@ -415,6 +504,7 @@ function App() {
                   disabled={isSending}
                   style={{ 
                     marginTop: '2.5rem', 
+
                     width: '100%',
                     padding: '1.2rem',
                     display: 'flex',
@@ -424,6 +514,20 @@ function App() {
                   }}
                 >
                   {isSending ? 'Procesando...' : 'Enviar Cotización'} <Send size={20} />
+
+                    opacity: isSending ? 0.7 : 1,
+                    width: '100%',
+                    padding: '1.2rem',
+                    fontSize: '1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.3)'
+                  }}
+                >
+                  {isSending ? 'Procesando Envío...' : 'Enviar Cotización'} <Send size={20} />
+
                 </button>
               </form>
             </motion.div>
@@ -441,9 +545,20 @@ function App() {
         <MessageCircle size={32} />
       </a>
 
+
       <footer className="footer">
         <p>Desarrollado con ❤️ por <strong>Carlos Villavizar</strong></p>
         <a href="https://carlosvillavizar.netlify.app" target="_blank" rel="noopener noreferrer" className="footer-link">
+
+      <footer className="footer">
+        <p>Desarrollado con ❤️ por <strong>Carlos Villavizar</strong></p>
+        <a 
+          href="https://carlosvillavizar.netlify.app" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="footer-link"
+        >
+
           Visitar mi Portafolio 🚀
         </a>
       </footer>
