@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import emailjs from '@emailjs/browser';
+import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, Circle, CheckSquare, Square, 
@@ -359,29 +360,85 @@ function App() {
                   
                   setIsSending(true);
                   
-                  // Preparamos los parámetros de la plantilla para que coincidan con el HTML
-                  const templateParams = {
+                  // Preparamos los parámetros de la plantilla
+                  const adminParams = {
                     from_name: formRef.current?.nombre.value,
                     reply_to: formRef.current?.email.value,
+                    phone: formRef.current?.telefono.value,
                     total: `$${totals.total.toLocaleString('en-US')} USD`,
                     message: totals.allSelectedOptions.map(o => o.label).join("\n• ")
+                  };
+
+                  // 1. Enviar al Administrador (carlosvillavizar07@gmail.com)
+                  const adminSubmissionParams = {
+                    ...adminParams,
+                    to_email: 'carlosvillavizar07@gmail.com'
                   };
 
                   emailjs.send(
                     'service_ff1j4eb', 
                     'template_bfpqc24', 
-                    templateParams, 
+                    adminSubmissionParams, 
                     'ambIUButaUEFn0Cue'
                   )
-                  .then((result) => {
-                      console.log('EXITO!', result.text);
-                      alert('¡Cotización enviada exitosamente a tu correo!');
-                      setShowModal(false);
-                  }, (error) => {
-                      console.log('FALLO...', error.text);
-                      alert('Hubo un error al enviar. Por favor intenta de nuevo.');
+                  .then(() => {
+                    console.log('Admin notificado');
+                    
+                    // 2. Enviar al Cliente después de 1.5 segundos para evitar bloqueos
+                    setTimeout(() => {
+                      const clientParams = {
+                        ...adminParams,
+                        to_email: formRef.current?.email.value, // Parámetro específico para el cliente
+                        is_client_copy: "SÍ" // Marca para diferenciar el envío
+                      };
+
+                      emailjs.send(
+                        'service_ff1j4eb', 
+                        'template_tvv9c1c', 
+                        clientParams, 
+                        'ambIUButaUEFn0Cue'
+                      )
+                      .then(() => {
+                        console.log('Cliente notificado');
+                        Swal.fire({
+                          title: '¡Cotización Enviada!',
+                          text: 'Hemos enviado una copia detallada a tu correo electrónico.',
+                          icon: 'success',
+                          background: '#1e293b',
+                          color: '#f8fafc',
+                          confirmButtonColor: '#3b82f6',
+                          confirmButtonText: 'Excelente'
+                        }).then(() => {
+                          // Refrescar la página después de que el usuario cierre el mensaje de éxito
+                          window.location.reload();
+                        });
+                      })
+                      .catch((err) => {
+                        console.error('Error enviando al cliente:', err);
+                        Swal.fire({
+                          title: 'Recibido Parcialmente',
+                          text: `Tu cotización nos llegó, pero hubo un problema enviando tu copia: ${err.text || 'Error desconocido'}. No te preocupes, te contactaremos pronto.`,
+                          icon: 'warning',
+                          background: '#1e293b',
+                          color: '#f8fafc',
+                          confirmButtonColor: '#3b82f6'
+                        }).then(() => {
+                          window.location.reload();
+                        });
+                      })
+                      .finally(() => setIsSending(false));
+                    }, 1500);
                   })
-                  .finally(() => {
+                  .catch((error) => {
+                    console.log('FALLO...', error.text);
+                    Swal.fire({
+                      title: 'Error de Envío',
+                      text: `No pudimos procesar tu solicitud: ${error.text || 'Error de conexión'}. Por favor, verifica tu internet e intenta de nuevo.`,
+                      icon: 'error',
+                      background: '#1e293b',
+                      color: '#f8fafc',
+                      confirmButtonColor: '#ef4444'
+                    });
                     setIsSending(false);
                   });
                 }}
@@ -393,6 +450,27 @@ function App() {
                 <div className="input-group">
                   <label>Tu Correo Electrónico</label>
                   <input type="email" name="email" required placeholder="juan@empresa.com" />
+                </div>
+                <div className="input-group">
+                  <label>Tu Teléfono / WhatsApp</label>
+                  <input 
+                    type="tel" 
+                    name="telefono" 
+                    required 
+                    onKeyPress={(e) => {
+                      if (!/[0-9]/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      target.value = target.value.replace(/[^0-9]/g, '');
+                    }}
+                    pattern="[0-9]{7,15}" 
+                    title="Ingresa solo números (de 7 a 15 dígitos)"
+                    placeholder="Ej. 8299381913" 
+                  />
+                  <small style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px', display: 'block' }}> Solo números, sin espacios ni guiones </small>
                 </div>
 
                 <button 
