@@ -1,4 +1,4 @@
-import { FormEvent, useState, useMemo, useRef } from 'react';
+import { type FormEvent, useState, useMemo, useRef } from 'react';
 import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
