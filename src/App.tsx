@@ -366,7 +366,8 @@ function App() {
                           color: '#f8fafc',
                           confirmButtonColor: '#3b82f6'
                         }).then(() => window.location.reload());
-                      }).catch(() => {
+                      }).catch((err) => {
+                        console.error('Error al enviar copia al cliente:', err);
                         Swal.fire({
                           title: 'Recibido',
                           text: `Recibimos tu solicitud. Hubo un retraso con tu copia pero te contactaremos pronto.`,
@@ -377,9 +378,10 @@ function App() {
                       }).finally(() => setIsSending(false));
                     }, 1500);
                   }).catch((error) => {
+                    console.error('Error al enviar correo al administrador:', error);
                     Swal.fire({
                       title: 'Error',
-                      text: `No pudimos procesar el envío: ${error.text || 'Revisa tu conexión'}.`,
+                      text: `No pudimos procesar el envío: ${error?.text || error?.message || 'Revisa tu conexión'}.`,
                       icon: 'error',
                       background: '#1e293b',
                       color: '#f8fafc'
