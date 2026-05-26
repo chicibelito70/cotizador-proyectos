@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { type FormEvent, useState, useMemo, useRef } from 'react';
 import emailjs from '@emailjs/browser';
 import Swal from 'sweetalert2';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,6 +56,106 @@ function App() {
   const handlePrev = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  const getEmailJsEnv = () => {
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const adminTemplateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID;
+    const clientTemplateId = import.meta.env.VITE_EMAILJS_CLIENT_TEMPLATE_ID;
+    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+    const missing = [];
+    if (!serviceId) missing.push('VITE_EMAILJS_SERVICE_ID');
+    if (!adminTemplateId) missing.push('VITE_EMAILJS_ADMIN_TEMPLATE_ID');
+    if (!clientTemplateId) missing.push('VITE_EMAILJS_CLIENT_TEMPLATE_ID');
+    if (!publicKey) missing.push('VITE_EMAILJS_PUBLIC_KEY');
+
+    return { serviceId, adminTemplateId, clientTemplateId, publicKey, missing };
+  };
+
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isSending) return;
+    setIsSending(true);
+
+    const { serviceId, adminTemplateId, clientTemplateId, publicKey, missing } = getEmailJsEnv();
+
+    if (missing.length > 0) {
+      setIsSending(false);
+      Swal.fire({
+        title: 'Error de configuración',
+        text: `Faltan variables de entorno: ${missing.join(', ')}`,
+        icon: 'error',
+        background: '#1e293b',
+        color: '#f8fafc',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    if (!formRef.current) {
+      setIsSending(false);
+      Swal.fire({
+        title: 'Error',
+        text: 'El formulario no se encontró. Recarga la página e inténtalo de nuevo.',
+        icon: 'error',
+        background: '#1e293b',
+        color: '#f8fafc',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    const fromName = formRef.current.nombre.value.trim();
+    const replyTo = formRef.current.email.value.trim();
+    const phone = formRef.current.telefono.value.trim();
+    const selectedMessage = totals.allSelectedOptions.map(o => o.label).join('\n• ');
+
+    const adminParams = {
+      from_name: fromName,
+      reply_to: replyTo,
+      phone,
+      total: `$${totals.total.toLocaleString('en-US')} USD`,
+      message: `Resumen de la cotización:\n• ${selectedMessage}`,
+      to_email: import.meta.env.VITE_ADMIN_EMAIL
+    };
+
+    const clientParams = {
+      ...adminParams,
+      to_email: replyTo,
+      is_client_copy: 'SÍ'
+    };
+
+    try {
+      await emailjs.send(serviceId, adminTemplateId, adminParams, publicKey);
+      await emailjs.send(serviceId, clientTemplateId, clientParams, publicKey);
+
+      await Swal.fire({
+        title: '¡Cotización Enviada!',
+        text: 'Hemos enviado una copia detallada a tu correo.',
+        icon: 'success',
+        background: '#1e293b',
+        color: '#f8fafc',
+        confirmButtonColor: '#3b82f6'
+      });
+
+      window.location.reload();
+    } catch (error) {
+      const err = error as any;
+      console.error('EmailJS error details:', err);
+      const errorText = err?.text || err?.message || err?.statusText || JSON.stringify(err) || 'Revisa tu conexión';
+
+      Swal.fire({
+        title: 'Error',
+        text: `No pudimos procesar el envío: ${errorText}`,
+        icon: 'error',
+        background: '#1e293b',
+        color: '#f8fafc',
+        confirmButtonColor: '#3b82f6'
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -321,74 +421,7 @@ function App() {
               
               <form 
                 ref={formRef}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (isSending) return;
-                  setIsSending(true);
-                  
-                  const adminParams = {
-                    from_name: formRef.current?.nombre.value,
-                    reply_to: formRef.current?.email.value,
-                    phone: formRef.current?.telefono.value,
-                    total: `$${totals.total.toLocaleString('en-US')} USD`,
-                    message: totals.allSelectedOptions.map(o => o.label).join("\n• ")
-                  };
-
-                  const adminSubmissionParams = {
-                    ...adminParams,
-                    to_email: import.meta.env.VITE_ADMIN_EMAIL
-                  };
-
-                  emailjs.send(
-                    import.meta.env.VITE_EMAILJS_SERVICE_ID, 
-                    import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID, 
-                    adminSubmissionParams, 
-                    import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-                  ).then(() => {
-                    setTimeout(() => {
-                      const clientParams = {
-                        ...adminParams,
-                        to_email: formRef.current?.email.value,
-                        is_client_copy: "SÍ"
-                      };
-
-                      emailjs.send(
-                        import.meta.env.VITE_EMAILJS_SERVICE_ID, 
-                        import.meta.env.VITE_EMAILJS_CLIENT_TEMPLATE_ID, 
-                        clientParams, 
-                        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-                      ).then(() => {
-                        Swal.fire({
-                          title: '¡Cotización Enviada!',
-                          text: 'Hemos enviado una copia detallada a tu correo.',
-                          icon: 'success',
-                          background: '#1e293b',
-                          color: '#f8fafc',
-                          confirmButtonColor: '#3b82f6'
-                        }).then(() => window.location.reload());
-                      }).catch((err) => {
-                        console.error('Error al enviar copia al cliente:', err);
-                        Swal.fire({
-                          title: 'Recibido',
-                          text: `Recibimos tu solicitud. Hubo un retraso con tu copia pero te contactaremos pronto.`,
-                          icon: 'info',
-                          background: '#1e293b',
-                          color: '#f8fafc'
-                        }).then(() => window.location.reload());
-                      }).finally(() => setIsSending(false));
-                    }, 1500);
-                  }).catch((error) => {
-                    console.error('Error al enviar correo al administrador:', error);
-                    Swal.fire({
-                      title: 'Error',
-                      text: `No pudimos procesar el envío: ${error?.text || error?.message || 'Revisa tu conexión'}.`,
-                      icon: 'error',
-                      background: '#1e293b',
-                      color: '#f8fafc'
-                    });
-                    setIsSending(false);
-                  });
-                }}
+                onSubmit={handleFormSubmit}
               >
                 <div className="input-group">
                   <label>Tu Nombre</label>
